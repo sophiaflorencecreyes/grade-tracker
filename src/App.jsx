@@ -1,35 +1,60 @@
-import { useState } from 'react'
-import Header from './components/Header.jsx'
-import StudentList from './components/StudentList.jsx'
+import { useState, useEffect, useRef } from 'react'
 
-const startingStudents = [
-  { id: 1, name: 'Ana Cruz', grade: 92 },
-  { id: 2, name: 'Ben Lim', grade: 85 },
-  { id: 3, name: 'Cy Tan', grade: 71 },
-]
+function AddStudentForm({ onAdd }) {
+  const [form, setForm] = useState(() => {
+    const saved = localStorage.getItem('draft')
+    if (saved) return JSON.parse(saved)
+    return { name: '', grade: '' }
+  })
+  const nameRef = useRef(null)
 
-function App() {
-  const [students, setStudents] = useState(startingStudents)
+  useEffect(() => {
+    const id = setTimeout(() => {
+      localStorage.setItem('draft', JSON.stringify(form))
+    }, 1000)
+    return () => clearTimeout(id)
+  }, [form])
 
-  function handleDelete(id) {
-    setStudents(students.filter((s) => s.id !== id))
+  function handleChange(e) {
+    setForm({ ...form, [e.target.name]: e.target.value })
   }
 
-  const count = students.length
-  let average = 0
-  if (count > 0) {
-    const total = students.reduce((sum, s) => sum + s.grade, 0)
-    average = Math.round((total / count) * 10) / 10
+  function handleSubmit(e) {
+    e.preventDefault()
+    if (form.name.trim() === '' || form.grade === '') return
+    onAdd(form.name.trim(), Number(form.grade))
+    setForm({ name: '', grade: '' })
+    nameRef.current.focus()
   }
 
   return (
-    <div className="min-h-screen bg-stone-100 text-stone-800">
-      <main className="mx-auto max-w-xl px-6 py-10">
-        <Header count={count} average={average} />
-        <StudentList students={students} onDelete={handleDelete} />
-      </main>
-    </div>
+    <form onSubmit={handleSubmit} className="mb-6 flex gap-2">
+      <input
+        ref={nameRef}
+        name="name"
+        value={form.name}
+        onChange={handleChange}
+        placeholder="Student name"
+        className="min-w-0 flex-1 rounded-lg border border-stone-300 bg-white px-3 py-2"
+      />
+      <input
+        name="grade"
+        type="number"
+        min="0"
+        max="100"
+        value={form.grade}
+        onChange={handleChange}
+        placeholder="Grade"
+        className="w-24 rounded-lg border border-stone-300 bg-white px-3 py-2"
+      />
+      <button
+        type="submit"
+        className="cursor-pointer rounded-lg bg-[#8B1C2C] px-4 py-2 font-semibold text-white hover:bg-[#6E1522]"
+      >
+        Add
+      </button>
+    </form>
   )
 }
 
-export default App
+export default AddStudentForm
